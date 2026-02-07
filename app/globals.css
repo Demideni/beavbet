@@ -11,7 +11,7 @@ html, body {
 }
 
 body {
-  @apply bg-bg text-white/90;
+  @apply bg-[#0B1220] text-white/90;
   font-feature-settings: "ss01" on, "cv01" on;
 }
 
