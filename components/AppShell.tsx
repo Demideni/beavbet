@@ -9,7 +9,7 @@ import {
   FiGift,
   FiSearch,
   FiMessageCircle,
-  FiTrophy,
+  FiAward,
   FiGrid,
   FiActivity,
   FiHelpCircle,
@@ -35,7 +35,7 @@ function MobileBottomNav() {
   const items: NavItem[] = useMemo(
     () => [
       { href: "/menu", label: "Меню", icon: <FiMenu /> },
-      { href: "/tournaments", label: "Соревно...", icon: <FiTrophy /> },
+      { href: "/tournaments", label: "Соревно...", icon: <FiAward /> },
       { href: "/casino", label: "Казино", icon: <FiGrid /> },
       { href: "/sports", label: "Спорт", icon: <FiActivity /> },
       { href: "/chat", label: "Чат", icon: <FiMessageCircle /> },
