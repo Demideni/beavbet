@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+  <title>Pulz Robinson</title>
+
+  <style>
+
+    /* ===== RESET ===== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      min-height: 100%;
+      height: 100svh;
+      min-height: 100svh;
+      height: 100dvh;
+      min-height: 100dvh;
+      min-height: 100%;
+      min-height: 100%;
+      height: 100svh;
+      min-height: 100svh;
+      height: 100dvh;
+      min-height: 100dvh;
+      overflow: hidden;
+      background: #05070d;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, Inter, Arial, sans-serif;
+    }
+
+    /* ===== GAME CANVAS ===== */
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    /* ===== HUD ===== */
+    #hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    
+/* ===== BOTTOM UI (BGaming-like) ===== */
+#bottom-ui{
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+  height: 86px;
+  border-radius: 22px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  background: rgba(8, 12, 24, 0.72);
+  border: 1px solid rgba(44, 242, 255, 0.25);
+  box-shadow: 0 0 28px rgba(0,180,255,0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 30;
+  pointer-events: auto;
+}
+
+.bet-box{
+  align-self: center;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap: 4px;
+  padding: 10px 12px;
+  height: 58px;
+  border-radius: 16px;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(255,255,255,0.10);
+  color:#fff;
+  cursor:pointer;
+}
+.bet-label, .bal-label{
+  font-size: 11px;
+  letter-spacing: .10em;
+  opacity: .75;
+}
+.bet-value, .bal-value{
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+
+.bal-box{
+  align-self: center;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  justify-content:center;
+  gap:4px;
+  padding: 10px 12px;
+  height: 58px;
+  border-radius: 16px;
+  background: rgba(0,0,0,0.22);
+  border: 1px solid rgba(255,255,255,0.08);
+  color:#fff;
+  user-select:none;
+}
+
+.play-btn{
+  width: 86px;
+  height: 86px;
+  margin-top: -28px; /* “выпирает” из бара */
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #2cf2ff, #0077ff);
+  box-shadow:
+    0 0 34px rgba(0, 180, 255, 0.75),
+    inset 0 0 12px rgba(255, 255, 255, 0.35);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size: 16px;
+  font-weight: 900;
+  color:#fff;
+  user-select:none;
+  cursor:pointer;
+  transition: transform .15s ease;
+}
+.play-btn:active{ transform: scale(0.94); }
+
+
+/* ===== STATS BAR (BGaming-like) ===== */
+.stats-bar{
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(110px + env(safe-area-inset-bottom)); /* sits above bottom bar */
+  width: min(92vw, 720px);
+  height: 68px;
+  padding: 10px 14px;
+  border-radius: 18px;
+  background: rgba(8, 12, 24, 0.52);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  z-index: 25; /* below bottom-ui (30), above canvas */
+  pointer-events: none;
+}
+.stats-item{ display:flex; flex-direction:column; justify-content:center; }
+.stats-label{
+  font-size: 11px;
+  letter-spacing: .10em;
+  color: rgba(255,255,255,0.62);
+}
+.stats-value{
+  margin-top: 2px;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: .02em;
+  color: rgba(255,255,255,0.95);
+}
+@media (min-width: 768px){
+  .stats-bar{
+    bottom: 132px;
+    height: 72px;
+    padding: 12px 16px;
+    border-radius: 20px;
+  }
+  .stats-value{ font-size: 22px; }
+}
+
+
+/* ===== MODAL ===== */
+.modal{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 40;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+}
+.modal.hidden{ display:none; }
+.modal-card{
+  width: min(520px, 100%);
+  border-radius: 22px;
+  background: rgba(10, 14, 28, 0.92);
+  border: 1px solid rgba(44,242,255,0.22);
+  box-shadow: 0 0 40px rgba(0,180,255,0.22);
+  padding: 14px;
+}
+.modal-title{
+  color:#fff;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  opacity: .9;
+  padding: 6px 8px 10px;
+}
+.bet-grid{
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 6px 4px 10px;
+}
+.bet-opt{
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(0,0,0,0.28);
+  border: 1px solid rgba(255,255,255,0.10);
+  color:#fff;
+  font-weight: 800;
+  cursor:pointer;
+}
+.bet-opt.active{
+  border-color: rgba(44,242,255,0.55);
+  box-shadow: 0 0 18px rgba(0,180,255,0.25);
+}
+.modal-close{
+  width:100%;
+  height: 46px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color:#fff;
+  font-weight: 800;
+  cursor:pointer;
+}
+/* ===== DESKTOP ===== */
+    
+/* ===== DESKTOP ===== */
+@media (min-width: 768px) {
+  #bottom-ui{
+    left: 24px;
+    right: 24px;
+    bottom: 20px;
+    height: 92px;
+    padding: 14px 18px 14px;
+  }
+  .play-btn{
+    width: 92px;
+    height: 92px;
+    font-size: 17px;
+    margin-top: -30px;
+  }
+  .bet-value, .bal-value{ font-size: 20px; }
+}
+
+  
+  
+
+/* ===== PLAY ORB BUTTON (round neon + sparks) ===== */
+.play-orb{
+  position: relative;
+  width: 86px;
+  height: 86px;
+  border: 0;
+  padding: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  display: grid;
+  place-items: center;
+  transform: translateZ(0);
+  will-change: transform, filter;
+  animation: orbBreathe var(--orb-breathe, 1.25s) ease-in-out infinite;
+}
+.play-orb:active{ transform: scale(0.92); }
+
+.play-orb.is-locked{
+  pointer-events: none;
+  opacity: 0.78;
+  filter: saturate(0.9);
+}
+.play-orb__img{
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  position: relative;
+  z-index: 3;
+  transform: scale(1.45);
+  transform-origin: center;
+  filter: drop-shadow(0 0 10px rgba(0,200,255,0.28));
+}
+.play-orb__ring{
+  position:absolute;
+  inset: -10px;
+  border-radius: 50%;
+  z-index: 1;
+  background:
+    conic-gradient(from 0deg,
+      rgba(0,255,255,0.0) 0deg,
+      rgba(0,255,255,0.0) 40deg,
+      rgba(0,255,255,0.95) 60deg,
+      rgba(0,255,120,0.85) 110deg,
+      rgba(0,255,255,0.0) 160deg,
+      rgba(0,255,255,0.0) 360deg);
+  filter: blur(0.4px) drop-shadow(0 0 16px rgba(0,220,255,0.32));
+  mask: radial-gradient(circle at center, transparent 58%, black 60%);
+  -webkit-mask: radial-gradient(circle at center, transparent 58%, black 60%);
+  animation: orbSpin var(--orb-spin, 2.9s) linear infinite;
+  opacity: 0.9;
+}
+.play-orb.is-armed .play-orb__ring{
+  opacity: 1;
+  filter: blur(0.35px) drop-shadow(0 0 20px rgba(0,255,120,0.40));
+}
+
+.play-orb__spark{
+  position:absolute;
+  inset:-12px;
+  border-radius:50%;
+  z-index: 2;
+  pointer-events:none;
+  animation: orbSparkSpin var(--spark-dur, 3.2s) linear infinite;
+}
+.play-orb__spark--b{ animation-delay: calc(var(--spark-dur, 3.2s) * -0.5); }
+.play-orb__dot{
+  position:absolute;
+  left:50%;
+  top:-2px;
+  width:10px;
+  height:10px;
+  transform: translateX(-50%);
+  border-radius:50%;
+  background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(0,245,255,0.9) 35%, rgba(0,245,255,0.0) 70%);
+  filter: drop-shadow(0 0 10px rgba(0,245,255,0.75)) drop-shadow(0 0 20px rgba(0,245,255,0.35));
+  opacity: 0.9;
+}
+
+.play-orb__flash{
+  position:absolute;
+  inset:-18px;
+  border-radius:50%;
+  z-index: 4;
+  opacity: 0;
+  background: radial-gradient(circle, rgba(255,255,255,0.55) 0%, rgba(0,220,255,0.25) 35%, rgba(0,220,255,0) 70%);
+  filter: blur(0.2px);
+}
+.play-orb.flash .play-orb__flash{
+  animation: orbFlash 0.28s ease-out 1;
+}
+.play-orb__label{
+  position:absolute;
+  bottom: -22px;
+  left:50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+  color: rgba(255,255,255,0.85);
+  text-shadow: 0 0 10px rgba(0,0,0,0.55);
+  z-index: 5;
+  opacity: 0;
+  pointer-events:none;
+}
+.play-orb.is-locked .play-orb__label{ opacity: 1; }
+
+@keyframes orbBreathe{
+  0%,100%{ transform: scale(0.98); filter: brightness(1); }
+  50%{ transform: scale(1.05); filter: brightness(1.06); }
+}
+@keyframes orbSpin{ to{ transform: rotate(360deg); } }
+@keyframes orbSparkSpin{ to{ transform: rotate(360deg); } }
+@keyframes orbFlash{
+  0%{ opacity: 0; transform: scale(0.92); }
+  25%{ opacity: 1; transform: scale(1.02); }
+  100%{ opacity: 0; transform: scale(1.18); }
+}
+
+/* desktop scale */
+@media (min-width: 768px) {
+  .play-orb{ width: 92px; height: 92px; margin-top: -30px; }
+  .play-orb__img{ width: 80px; height: 80px; }
+}
+
+</style>
+
+<style>
+  .fs-btn{
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 9999;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.18);
+    background: rgba(0,0,0,.45);
+    color: rgba(255,255,255,.92);
+    font-size: 18px;
+    font-weight: 800;
+    cursor: pointer;
+    display: none;
+  }
+  @media (min-width:1024px){
+    .fs-btn{ display: inline-flex; align-items:center; justify-content:center; }
+  }
+</style>
+
+</head>
+
+<body>
+  <!-- GAME -->
+  <div id="canvas-container">
+    <canvas id="game-canvas"></canvas>
+    <button id="fs-btn" class="fs-btn" aria-label="Fullscreen">⛶</button>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud"></div>
+
+
+  <!-- STATS BAR -->
+  <div id="statsBar" class="stats-bar" aria-label="Stats">
+    <div class="stats-item">
+      <div class="stats-label">TIME</div>
+      <div class="stats-value" id="statTime">00:00</div>
+    </div>
+    <div class="stats-item">
+      <div class="stats-label">ALTITUDE</div>
+      <div class="stats-value" id="statAlt">0.0m</div>
+    </div>
+    <div class="stats-item">
+      <div class="stats-label">DISTANCE</div>
+      <div class="stats-value" id="statDist">0.0m</div>
+    </div>
+    <div class="stats-item">
+      <div class="stats-label">MULTIPLIER</div>
+      <div class="stats-value" id="statMult">x1.0</div>
+    </div>
+  </div>
+
+
+    <!-- BOTTOM BAR -->
+  <div id="bottom-ui">
+    <button class="bet-box" id="bet-box" type="button" aria-label="Bet">
+      <div class="bet-label">BET</div>
+      <div class="bet-value" id="bet-value">$1.00</div>
+    </button>
+
+    <button class="play-orb is-idle" id="play-btn" type="button" aria-label="Play">
+      <span class="play-orb__ring" aria-hidden="true"></span>
+      <span class="play-orb__spark play-orb__spark--a" aria-hidden="true"><span class="play-orb__dot"></span></span>
+      <span class="play-orb__spark play-orb__spark--b" aria-hidden="true"><span class="play-orb__dot"></span></span>
+      <img class="play-orb__img" src="assets/ui/play_button.png" alt="" draggable="false" />
+      <span class="play-orb__flash" aria-hidden="true"></span>
+      <span class="play-orb__label" id="play-label" aria-hidden="true">PLAY</span>
+    </button>
+
+    <div class="bal-box" aria-label="Balance">
+      <div class="bal-label">BALANCE</div>
+      <div class="bal-value" id="bal-value">$0.00</div>
+    </div>
+  </div>
+
+  <!-- BET MODAL -->
+  <div id="bet-modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-title">Choose bet</div>
+      <div class="bet-grid" id="bet-grid"></div>
+      <button class="modal-close" id="bet-close" type="button">Close</button>
+    </div>
+  </div>
+
+
+  <!-- GAME LOGIC -->
+  <!-- GSAP (можно оставить CDN для скорости) -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+
+<!-- Robinson modules -->
+<script src="./bridge.js"></script>
+<script src="./ui.js"></script>
+<script src="./game.js"></script>
+
+</body>
+</html>
