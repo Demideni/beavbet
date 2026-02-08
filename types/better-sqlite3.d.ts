@@ -2,9 +2,9 @@ declare module "better-sqlite3" {
   type RunResult = { changes: number; lastInsertRowid: number | bigint };
 
   interface Statement {
-    run(params?: any): RunResult;
-    get(params?: any): any;
-    all(params?: any): any[];
+    run(...params: any[]): RunResult;
+    get(...params: any[]): any;
+    all(...params: any[]): any[];
     pluck(toggleState?: boolean): this;
     raw(toggleState?: boolean): this;
   }
