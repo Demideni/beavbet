@@ -2,23 +2,26 @@ import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
 
+// better-sqlite3 exports a default Database class. Its instance type is what we use everywhere.
+type SqliteDb = InstanceType<typeof Database>;
+
 // Simple local SQLite storage for demo/dev.
 // For production you can swap this with Postgres/Supabase, keeping the same API.
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DB_PATH = path.join(DATA_DIR, "beavbet.db");
 
-function hasColumn(db: Database.Database, table: string, column: string) {
+function hasColumn(db: SqliteDb, table: string, column: string) {
   const cols = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
   return cols.some((c) => c.name === column);
 }
 
-function ensureColumn(db: Database.Database, table: string, column: string, ddl: string) {
+function ensureColumn(db: SqliteDb, table: string, column: string, ddl: string) {
   if (hasColumn(db, table, column)) return;
   db.exec(`ALTER TABLE ${table} ADD COLUMN ${ddl};`);
 }
 
-function ensureSchema(db: Database.Database) {
+function ensureSchema(db: SqliteDb) {
   db.exec(`
     PRAGMA journal_mode=WAL;
     PRAGMA foreign_keys=ON;
