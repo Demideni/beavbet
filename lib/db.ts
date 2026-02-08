@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 // better-sqlite3 exports a default Database class. Its instance type is what we use everywhere.
-type SqliteDb = InstanceType<typeof Database>;
+export type SqliteDb = InstanceType<typeof Database>;
 
 // Simple local SQLite storage for demo/dev.
 // For production you can swap this with Postgres/Supabase, keeping the same API.

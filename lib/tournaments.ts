@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { getDb } from "@/lib/db";
-import type Database from "better-sqlite3";
+import type { SqliteDb } from "@/lib/db";
 
 export type TournamentType = "daily" | "monthly";
 
@@ -43,7 +43,7 @@ export function getOrCreateActiveTournaments(gameKey: string, nowMs: number = Da
   return { daily, monthly };
 }
 
-function getOrCreateTournament(db: Database.Database, t: Omit<Tournament, "id">) {
+function getOrCreateTournament(db: SqliteDb, t: Omit<Tournament, "id">) {
   const found = db
     .prepare(
       `SELECT * FROM tournaments WHERE game_key=? AND type=? AND start_at=? AND end_at=? LIMIT 1`
