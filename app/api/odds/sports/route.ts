@@ -24,7 +24,7 @@ export async function GET() {
     const apiKey = getOddsApiKey();
 
     // https://api.the-odds-api.com/v4/sports/?apiKey=...
-    const sports = await oddsFetchJson<OddsSport[]>(
+    const { data: sports } = await oddsFetchJson<OddsSport[]>(
       `https://api.the-odds-api.com/v4/sports/?apiKey=${encodeURIComponent(apiKey)}`
     );
 
