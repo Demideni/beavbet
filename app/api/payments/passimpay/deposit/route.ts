@@ -1,100 +1,100 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
-
 import { getSessionUser } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { passimpaySignature } from "@/lib/passimpay";
 
 export const runtime = "nodejs";
 
-const BodySchema = z.object({
-  amount: z.number().positive(),
-  currency: z.string().min(3).max(10).optional().default("USD"),
-  // optional customer info
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-  email: z.string().email().optional(),
-  phoneNo: z.string().optional(),
+const Schema = z.object({
+  amount: z.number().finite().positive().max(1000000),
+  currency: z.enum(["USD", "EUR", "USDT", "BTC"]).default("USD"),
 });
 
 export async function POST(req: Request) {
-  const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const session = await getSessionUser();
+  if (!session) return NextResponse.json({ ok: false, error: "UNAUTH" }, { status: 401 });
 
-  const parsed = BodySchema.safeParse(await req.json().catch(() => ({})));
+  const json = await req.json().catch(() => null);
+  const parsed = Schema.safeParse(json);
   if (!parsed.success) {
-    return NextResponse.json({ error: "invalid_body", details: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "INVALID_INPUT" }, { status: 400 });
   }
-
-  const { amount, currency, firstName, lastName, email, phoneNo } = parsed.data;
 
   const platformId = (process.env.PASSIMPAY_PLATFORM_ID || "").trim();
   const secret = (process.env.PASSIMPAY_API_KEY || "").trim();
   const baseUrl = (process.env.PASSIMPAY_BASE_URL || "https://api.passimpay.io").trim();
 
   if (!platformId || !secret) {
-    return NextResponse.json({ error: "PASSIMPAY_PLATFORM_ID/PASSIMPAY_API_KEY is not set" }, { status: 500 });
+    return NextResponse.json({ ok: false, error: "PASSIMPAY_NOT_CONFIGURED" }, { status: 500 });
+  }
+
+  const { amount, currency } = parsed.data;
+
+  // Ensure wallet exists now (so UI can show it) but DO NOT credit here
+  const db = getDb();
+  const now = Date.now();
+
+  const w = db
+    .prepare("SELECT id FROM wallets WHERE user_id = ? AND currency = ?")
+    .get(session.id, currency) as { id: string } | undefined;
+  if (!w) {
+    db.prepare("INSERT INTO wallets (id, user_id, currency, balance, created_at) VALUES (?, ?, ?, ?, ?)").run(
+      randomUUID(),
+      session.id,
+      currency,
+      0,
+      now
+    );
   }
 
   const orderId = randomUUID();
 
-  const body: Record<string, any> = {
+  const body = {
     platformId,
     orderId,
     amount: amount.toFixed(2),
     symbol: currency,
   };
 
-  if (firstName) body.firstName = firstName;
-  if (lastName) body.lastName = lastName;
-  if (email) body.email = email;
-  if (phoneNo) body.phoneNo = phoneNo;
-
   const signature = passimpaySignature(platformId, body, secret);
 
-  const r = await fetch(baseUrl + "/v2/createorder", {
+  const r = await fetch(`${baseUrl}/v2/createorder`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "x-signature": signature,
     },
     body: JSON.stringify(body),
+    // IMPORTANT: do not cache
     cache: "no-store",
   });
 
-  const data = await r.json().catch(() => ({}));
+  const data = await r.json().catch(() => null);
 
-  if (!r.ok) {
-    return NextResponse.json({ error: "passimpay_error", details: data }, { status: 400 });
+  if (!r.ok || !data?.url) {
+    return NextResponse.json({ ok: false, error: "PASSIMPAY_ERROR", details: data }, { status: 400 });
   }
 
-  const db = getDb();
-  const now = Date.now();
-
-  // Ensure wallet exists
+  // Save a pending transaction
+  const txId = randomUUID();
   db.prepare(
-    `INSERT OR IGNORE INTO wallets (id, user_id, currency, balance, created_at)
-     VALUES (?, ?, ?, 0, ?)`
-  ).run(randomUUID(), user.id, currency, now);
-
-  // Record transaction (status pending until webhook confirms)
-  db.prepare(
-    `INSERT INTO transactions
-      (id, user_id, type, amount, currency, status, created_at, meta, provider, provider_ref, order_id, updated_at)
-     VALUES
-      (?, ?, 'deposit', ?, ?, 'pending', ?, ?, 'passimpay', ?, ?, ?)`
+    "INSERT INTO transactions (id, user_id, type, amount, currency, status, created_at, meta, provider, provider_ref, order_id, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
   ).run(
-    randomUUID(),
-    user.id,
+    txId,
+    session.id,
+    "deposit",
     amount,
     currency,
+    "pending",
     now,
-    JSON.stringify({ orderId, passimpay: data }),
+    JSON.stringify({ passimpay: { url: data.url, response: data } }),
+    "passimpay",
     data.paymentId ?? null,
     orderId,
     now
   );
 
-  return NextResponse.json({ url: data.url, orderId });
+  return NextResponse.json({ ok: true, url: data.url, orderId });
 }

@@ -5,6 +5,8 @@ import { Topbar } from "@/app/components/Topbar";
 import { MobileNav } from "@/app/components/MobileNav";
 import RefCapture from "@/app/components/RefCapture";
 import { Suspense } from "react";
+import DepositBoostToast from "@/components/DepositBoostToast";
+
 
 export const metadata: Metadata = {
   title: "BeavBet — Crypto Casino",
@@ -31,6 +33,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </main>
           </div>
         </div>
+
+        {/* Deposit boost toast */}
+        <DepositBoostToast minutes={30} percent={170} />
 
         {/* Mobile bottom tab bar (matches the reference mobile UI) */}
         <MobileNav />
