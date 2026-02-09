@@ -11,6 +11,17 @@ const Schema = z.object({
 });
 
 export async function POST(req: Request) {
+  // IMPORTANT:
+  // This endpoint was originally a testing shortcut that instantly credited balance.
+  // In production, deposits must be processed via a payment provider (e.g. Passimpay)
+  // and confirmed via webhook to prevent fraud.
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_TEST_DEPOSIT !== "1") {
+    return NextResponse.json(
+      { ok: false, error: "DEPOSIT_DISABLED" },
+      { status: 403 }
+    );
+  }
+
   const session = await getSessionUser();
   if (!session) return NextResponse.json({ ok: false, error: "UNAUTH" }, { status: 401 });
 

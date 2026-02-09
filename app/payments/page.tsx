@@ -66,7 +66,28 @@ export default function PaymentsPage() {
       setBusy(false);
       return;
     }
-    const r = await fetch(`/api/account/${kind}`, {
+
+    // Deposits must go through a payment provider (Passimpay).
+    if (kind === "deposit") {
+      const r = await fetch(`/api/payments/passimpay/deposit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ amount: num, currency }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j?.url) {
+        setMsg(j?.error ? `Ошибка пополнения: ${String(j.error)}` : "Ошибка пополнения");
+        setBusy(false);
+        return;
+      }
+      // Redirect user to the hosted payment page.
+      window.location.href = j.url;
+      return;
+    }
+
+    // Withdraw is still MVP/manual (server-side balance check).
+    const r = await fetch(`/api/account/withdraw`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -78,7 +99,7 @@ export default function PaymentsPage() {
       setBusy(false);
       return;
     }
-    setMsg(kind === "deposit" ? "Пополнение выполнено ✅" : "Вывод выполнен ✅");
+    setMsg("Заявка на вывод создана ✅");
     await refresh();
     setBusy(false);
   }
