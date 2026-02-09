@@ -40,22 +40,10 @@ type SlipState = {
   currency?: string;
 };
 
-type Tab = "sport" | "esports" | "racing";
+type Tab = "sport";
 type ViewTab = "line" | "history";
 
-function tabOfSport(s: SportItem): Tab {
-  const k = (s.key || "").toLowerCase();
-  // Key prefixes are the most reliable signal.
-  if (k.startsWith("esports_")) return "esports";
-  if (k.startsWith("motorsport_") || k.startsWith("racing_")) return "racing";
-
-  const norm = (v: string) => (v || "").toLowerCase().replace(/[^a-z]/g, "");
-  const g = norm(s.group);
-  const t = norm(s.title);
-  const blob = `${g}${t}`;
-
-  if (blob.includes("esports") || blob.includes("esport")) return "esports";
-  if (blob.includes("motorsport") || blob.includes("racing") || blob.includes("nascar") || blob.includes("formula")) return "racing";
+function tabOfSport(_s: SportItem): Tab {
   return "sport";
 }
 
@@ -94,21 +82,90 @@ function pickH2H(ev: EventOdds) {
   return { bookmaker: undefined as any, home: undefined, draw: undefined, away: undefined };
 }
 
+
+function TeamLogo({ name }: { name: string }) {
+  const letter = (name || "?").trim().charAt(0).toUpperCase();
+  return (
+    <div className="h-9 w-9 shrink-0 rounded-full border border-white/15 bg-white/10 grid place-items-center text-white/80 text-sm font-bold">
+      {letter}
+    </div>
+  );
+}
+
+function OddButton({
+  label,
+  value,
+  onClick,
+}: {
+  label: string;
+  value?: number;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!value}
+      className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-center text-sm text-white hover:bg-white/10 disabled:opacity-50 disabled:hover:bg-white/5"
+    >
+      <div className="text-[11px] text-white/50">{label}</div>
+      <div className="font-semibold">{value ? value.toFixed(2) : "-"}</div>
+    </button>
+  );
+}
+
+function EventCard({
+  ev,
+  onPick,
+}: {
+  ev: EventOdds;
+  onPick: (pick: SlipPick, odds: number, bookTitle?: string) => void;
+}) {
+  const h2h = pickH2H(ev);
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-lg">
+      <div className="text-xs text-white/50 mb-2">{ev.sport_title || ev.sport_key}</div>
+
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <TeamLogo name={ev.home_team} />
+          <div className="text-white font-medium truncate">{ev.home_team}</div>
+        </div>
+
+        <div className="text-white/40 text-sm shrink-0">vs</div>
+
+        <div className="flex items-center gap-3 min-w-0 justify-end">
+          <div className="text-white font-medium truncate text-right">{ev.away_team}</div>
+          <TeamLogo name={ev.away_team} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 mt-4">
+        <OddButton
+          label="1"
+          value={h2h.home}
+          onClick={() => h2h.home && onPick("home", h2h.home, h2h.bookmaker)}
+        />
+        <OddButton
+          label="X"
+          value={h2h.draw}
+          onClick={() => h2h.draw && onPick("draw", h2h.draw, h2h.bookmaker)}
+        />
+        <OddButton
+          label="2"
+          value={h2h.away}
+          onClick={() => h2h.away && onPick("away", h2h.away, h2h.bookmaker)}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function SportOddsClient() {
   // Всегда держим массив (даже пока грузим), чтобы избежать runtime ошибок вида `null is not an object (sports.find)`
   const [sports, setSports] = useState<SportItem[]>([]);
   const [sportKey, setSportKey] = useState<string>("soccer_epl");
-  const [tab, setTab] = useState<"sport" | "esports" | "racing">("sport");
-
-  // Allow opening a specific tab via URL, e.g. /sport?tab=esports
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const sp = new URLSearchParams(window.location.search);
-    const t = sp.get("tab");
-    if (t === "esports" || t === "racing" || t === "sport") {
-      setTab(t);
-    }
-  }, []);
+  const tab: Tab = "sport";
 
   const [viewTab, setViewTab] = useState<ViewTab>("line");
   const [selectedGroup, setSelectedGroup] = useState<string>("");
@@ -227,6 +284,34 @@ export default function SportOddsClient() {
       .sort((a, b) => b.count - a.count || a.group.localeCompare(b.group));
   }, [sportsForTab]);
 
+
+  const popularLeagues = useMemo(() => {
+    const pick = (prefixes: string[]) => {
+      for (const p of prefixes) {
+        const found = leagueOptions.find((s) => s.active && s.key.toLowerCase().startsWith(p));
+        if (found) return found;
+      }
+      return null;
+    };
+
+    const hockey = pick(["icehockey_", "hockey_"]);
+    const basketball = pick(["basketball_"]);
+    const football = pick(["soccer_"]);
+
+    const out: Array<{ label: string; key: string; title: string }> = [];
+    if (hockey) out.push({ label: "Хоккей", key: hockey.key, title: hockey.title || hockey.key });
+    if (basketball) out.push({ label: "Баскетбол", key: basketball.key, title: basketball.title || basketball.key });
+    if (football) out.push({ label: "Футбол", key: football.key, title: football.title || football.key });
+
+    // fallback: if nothing matched, show first active leagues
+    if (!out.length) {
+      for (const s of leagueOptions.filter((x) => x.active).slice(0, 3)) {
+        out.push({ label: s.title || s.key, key: s.key, title: s.title || s.key });
+      }
+    }
+    return out;
+  }, [leagueOptions]);
+
   const leaguesForSelectedGroup = useMemo(() => {
     const list = sportsForTab.filter((s) => (selectedGroup ? (s.group || "Другое") === selectedGroup : true));
     // внутри группы сортируем по title
@@ -242,8 +327,6 @@ export default function SportOddsClient() {
     if (!sports.length) return;
     const current = sports.find((s) => s.key === sportKey);
     if (!current) return;
-    const desiredTab = tabOfSport(current);
-    if (desiredTab !== tab) setTab(desiredTab);
     const g = current.group || "Другое";
     if (g !== selectedGroup) setSelectedGroup(g);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -375,33 +458,11 @@ export default function SportOddsClient() {
 
   return (
     <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-      {/* Tabs: Спорт / Киберспорт / Гонки (как в референсе) */}
+      {/* Sportsbook header */}
       <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-2">
-          {(
-          [
-            { key: "sport", label: "Спорт" },
-            { key: "esports", label: "Киберспорт" },
-            { key: "racing", label: "Гонки" },
-          ] as const
-          ).map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => {
-                setTab(t.key);
-                setViewTab("line");
-              }}
-              className={
-                "h-10 rounded-2xl px-4 text-sm font-semibold transition " +
-                (tab === t.key
-                  ? "bg-white/10 text-white"
-                  : "bg-black/20 text-white/60 hover:bg-white/5")
-              }
-            >
-              {t.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-3">
+          <div className="text-lg font-bold text-white">Спорт</div>
+          <div className="text-sm text-white/50">Линия и ставки</div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -416,10 +477,10 @@ export default function SportOddsClient() {
               type="button"
               onClick={() => setViewTab(t.key)}
               className={
-                "h-10 rounded-2xl px-4 text-sm font-semibold transition " +
+                "h-10 rounded-2xl px-4 text-sm font-semibold transition border " +
                 (viewTab === t.key
-                  ? "bg-[#ff2d55]/15 border border-[#ff2d55]/25 text-white"
-                  : "bg-black/20 text-white/60 hover:bg-white/5 border border-transparent")
+                  ? "bg-[#ff2d55]/15 border-[#ff2d55]/25 text-white"
+                  : "bg-black/20 text-white/60 hover:bg-white/5 border-transparent")
               }
             >
               {t.label}
@@ -428,31 +489,52 @@ export default function SportOddsClient() {
         </div>
       </div>
 
-      {viewTab === "line" ? (
+{viewTab === "line" ? (
         <>
-          {/* Популярные категории (горизонтальный скролл на мобиле) */}
-          {groupsForTab.length > 0 && (
+                    {/* Популярное (табы спорта) */}
+          {popularLeagues.length > 0 && (
             <div className="mb-4 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {groupsForTab.slice(0, 16).map((g) => (
+              {popularLeagues.map((p) => (
                 <button
-                  key={g.group}
+                  key={p.key}
                   type="button"
-                  onClick={() => setSelectedGroup(g.group)}
+                  onClick={() => setSportKey(p.key)}
                   className={
-                    "shrink-0 rounded-2xl border px-3 py-2 text-sm transition " +
-                    (selectedGroup === g.group
+                    "shrink-0 rounded-2xl border px-3 py-2 text-sm font-semibold transition " +
+                    (sportKey === p.key
                       ? "border-white/20 bg-[#ff2d55]/15 text-white"
                       : "border-white/10 bg-black/20 text-white/70 hover:bg-white/5")
                   }
                 >
-                  <span className="mr-2">{g.group}</span>
-                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-white/70">{g.count}</span>
+                  {p.label}
                 </button>
               ))}
             </div>
           )}
 
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          {/* Интересные матчи (горизонтальный скролл) */}
+          {Array.isArray(events) && events.length > 0 && (
+            <div className="mb-5">
+              <div className="mb-3 flex items-center gap-2">
+                <div className="text-white font-semibold">Интересные матчи</div>
+                <div className="text-[11px] text-white/40">по выбранной лиге</div>
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {events.slice(0, 8).map((ev) => (
+                  <div key={ev.id} className="min-w-[320px] max-w-[360px]">
+                    <EventCard
+                      ev={ev}
+                      onPick={(pick, odds, bookTitle) =>
+                        openSlip({ ev, pick, odds, bookTitle })
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+<div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <div className="text-lg font-bold text-white">Линия</div>
               <div className="text-sm text-white/60">Выбери лигу и рынок, затем ставь.</div>
@@ -552,74 +634,15 @@ export default function SportOddsClient() {
                 Нет событий для этой лиги/рынка. Попробуй другую лигу или регион.
               </div>
             ) : (
-              events.map((ev) => {
-                const h2h = pickH2H(ev);
-                return (
-                  <div
-                    key={ev.id}
-                    className="rounded-2xl border border-white/10 bg-black/20 p-4"
-                  >
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <div className="text-xs text-white/50">{fmtTime(ev.commence_time)}</div>
-                    <div className="mt-1 text-base font-semibold text-white">
-                      {ev.home_team} <span className="text-white/40">vs</span> {ev.away_team}
-                    </div>
-                    {h2h.bookmaker && (
-                      <div className="mt-1 text-[11px] text-white/40">Book: {h2h.bookmaker}</div>
-                    )}
-                  </div>
-
-                  {/* Для spreads/totals пока просто показываем, что рынок другой */}
-                  {market !== "h2h" ? (
-                    <div className="text-sm text-white/60">
-                      Сейчас выбран рынок <b className="text-white/80">{market}</b>.  
-                      В следующем шаге отрисую коэффициенты именно для него.
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-3 gap-2 md:w-[320px]">
-                      <button
-                        type="button"
-                        disabled={!h2h.home}
-                        onClick={() =>
-                          h2h.home &&
-                          openSlip({ ev, pick: "home", odds: h2h.home, bookTitle: h2h.bookmaker })
-                        }
-                        className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-center text-sm text-white hover:bg-white/10 disabled:opacity-50 disabled:hover:bg-white/5"
-                      >
-                        <div className="text-[11px] text-white/60">1</div>
-                        <div className="font-bold">{h2h.home ?? "—"}</div>
-                      </button>
-                      <button
-                        type="button"
-                        disabled={!h2h.draw}
-                        onClick={() =>
-                          h2h.draw &&
-                          openSlip({ ev, pick: "draw", odds: h2h.draw, bookTitle: h2h.bookmaker })
-                        }
-                        className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-center text-sm text-white hover:bg-white/10 disabled:opacity-50 disabled:hover:bg-white/5"
-                      >
-                        <div className="text-[11px] text-white/60">X</div>
-                        <div className="font-bold">{h2h.draw ?? "—"}</div>
-                      </button>
-                      <button
-                        type="button"
-                        disabled={!h2h.away}
-                        onClick={() =>
-                          h2h.away &&
-                          openSlip({ ev, pick: "away", odds: h2h.away, bookTitle: h2h.bookmaker })
-                        }
-                        className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-center text-sm text-white hover:bg-white/10 disabled:opacity-50 disabled:hover:bg-white/5"
-                      >
-                        <div className="text-[11px] text-white/60">2</div>
-                        <div className="font-bold">{h2h.away ?? "—"}</div>
-                      </button>
-                    </div>
-                  )}
-                </div>
-                  </div>
-                );
-              })
+              events.map((ev) => (
+                <EventCard
+                  key={ev.id}
+                  ev={ev}
+                  onPick={(pick, odds, bookTitle) =>
+                    openSlip({ ev, pick, odds, bookTitle })
+                  }
+                />
+              ))
             )}
           </div>
         </>
