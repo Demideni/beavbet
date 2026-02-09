@@ -171,7 +171,17 @@ export function getDb() {
   const db = new Database(DB_PATH);
   ensureSchema(db);
   global.__beavbet_db__ = db;
-  return db;
+  
+  // Game aggregator sessions (session_id -> user_id mapping for callbacks)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ga_sessions (
+      session_id TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      created_at INTEGER NOT NULL
+    );
+  `);
+
+return db;
 }
 
 // Backwards-compatible exports used by some routes
