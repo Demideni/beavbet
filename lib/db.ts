@@ -151,6 +151,18 @@ function ensureSchema(db: any) {
 
   // Lightweight migrations for older DBs
   ensureColumn(db, 'users', 'role', "role TEXT NOT NULL DEFAULT 'user'");
+
+  // Passimpay/payment fields (kept optional to stay backward-compatible)
+  ensureColumn(db, 'transactions', 'provider', "provider TEXT");
+  ensureColumn(db, 'transactions', 'provider_ref', "provider_ref TEXT");
+  ensureColumn(db, 'transactions', 'order_id', "order_id TEXT");
+  ensureColumn(db, 'transactions', 'updated_at', "updated_at INTEGER");
+  // Helpful indexes for payment lookups/idempotency
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_transactions_order_id ON transactions(order_id);
+    CREATE INDEX IF NOT EXISTS idx_transactions_provider_ref ON transactions(provider_ref);
+  `);
+
 }
 
 declare global {
