@@ -9,7 +9,7 @@ import { randomUUID } from "node:crypto";
 const DATA_DIR = path.join(process.cwd(), "data");
 const DB_PATH = path.join(DATA_DIR, "beavbet.db");
 
-function hasColumn(db: Database.Database, table: string, column: string) {
+function hasColumn(db: any, table: string, column: string) {
   const cols = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
   return cols.some((c) => c.name === column);
 }
