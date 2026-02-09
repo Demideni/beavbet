@@ -6,7 +6,7 @@ import { randomUUID } from "node:crypto";
 // Simple local SQLite storage for demo/dev.
 // For production you can swap this with Postgres/Supabase, keeping the same API.
 
-const DATA_DIR = path.join(process.cwd(), "data");
+const DATA_DIR = (process.env.RENDER_DISK_PATH || process.env.BEAVBET_DATA_DIR || path.join(process.cwd(), "data"));
 const DB_PATH = path.join(DATA_DIR, "beavbet.db");
 
 function hasColumn(db: any, table: string, column: string) {
