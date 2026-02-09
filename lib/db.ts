@@ -147,6 +147,9 @@ function ensureSchema(db: any) {
     CREATE INDEX IF NOT EXISTS idx_ref_affiliate_created ON referrals(affiliate_user_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_comm_affiliate_created ON affiliate_commissions(affiliate_user_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_withdraw_user_created ON withdrawal_requests(user_id, created_at DESC);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_tx_provider_ref ON transactions(provider, provider_ref) WHERE provider IS NOT NULL AND provider_ref IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_tx_provider_type_order ON transactions(provider, type, order_id);
+
   `);
 
     // Lightweight migrations for older DBs
