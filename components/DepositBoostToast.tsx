@@ -68,26 +68,28 @@ export default function DepositBoostToast({
     );
   };
 
-  return (
-    <div
-      className="
-        fixed z-[60]
-        right-3
-        bottom-[15vh]        /* ⬅️ подняли выше на ~15% экрана */
-        max-sm:left-3 max-sm:right-3
-      "
-    >
-      <div
-        className="
-          flex items-center justify-between gap-2
-          rounded-xl
-          px-3 py-2           /* ⬅️ меньше на ~30% */
-          border border-blue-300/20
-          bg-gradient-to-r from-blue-700/50 via-blue-600/40 to-blue-500/30
-          backdrop-blur
-          shadow-xl
-        "
-      >
+return (
+  <div
+    className="
+      fixed z-[60]
+      right-2 sm:right-4          /* ⬅️ прижали к правому краю */
+      bottom-[15vh]
+      w-[78%] max-w-[380px]       /* ⬅️ компактная ширина */
+    "
+  >
+
+   <div
+  className="
+    flex items-center justify-between gap-2
+    rounded-xl
+    px-3 py-2
+    border border-blue-300/20
+    bg-gradient-to-r from-blue-700/60 via-blue-600/50 to-blue-500/40
+    backdrop-blur
+    shadow-xl
+  "
+>
+
         <div className="flex items-center gap-3">
           {/* текст больше */}
           <div className="text-base font-semibold text-white">
