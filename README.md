@@ -32,3 +32,12 @@ npm run start
 - Каталог игр /casino
 - Auth
 - Касса /payments + PassimPay (create + webhook)
+
+
+## Render (important)
+If you deploy to Render and use the built-in SQLite DB, you must attach a **Persistent Disk** and set the DB path to the disk (otherwise the DB resets on every deploy).
+
+Recommended:
+- Mount path: `/var/data`
+- Env: `DB_PATH=/var/data/beavbet.db`
+

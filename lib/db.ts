@@ -6,8 +6,16 @@ import { randomUUID } from "node:crypto";
 // Simple local SQLite storage for demo/dev.
 // For production you can swap this with Postgres/Supabase, keeping the same API.
 
-const DATA_DIR = (process.env.RENDER_DISK_PATH || process.env.BEAVBET_DATA_DIR || path.join(process.cwd(), "data"));
-const DB_PATH = path.join(DATA_DIR, "beavbet.db");
+// Data directory for SQLite.
+// On Render, you MUST use a Persistent Disk mount (commonly /var/data) or the DB will reset on every deploy.
+const DEFAULT_RENDER_DATA_DIR = "/var/data";
+
+const DATA_DIR =
+  process.env.RENDER_DISK_PATH ||
+  process.env.BEAVBET_DATA_DIR ||
+  (process.env.RENDER ? DEFAULT_RENDER_DATA_DIR : path.join(process.cwd(), "data"));
+
+const DB_PATH = process.env.DB_PATH || path.join(DATA_DIR, "beavbet.db");
 
 function hasColumn(db: any, table: string, column: string) {
   const cols = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
@@ -161,8 +169,6 @@ function ensureSchema(db: any) {
   ensureColumn(db, 'transactions', 'order_id', "order_id TEXT");
   ensureColumn(db, 'transactions', 'updated_at', "updated_at INTEGER");
 
-  // Wallets: some routes and providers expect updated_at
-  ensureColumn(db, 'wallets', 'updated_at', "updated_at INTEGER");
 }
 
 declare global {
