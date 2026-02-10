@@ -26,7 +26,7 @@ export function Topbar() {
   }, []);
 
   const initials = user?.nickname?.slice(0, 2).toUpperCase() || user?.email?.slice(0, 2).toUpperCase();
-  const balanceText = user?.balance != null ? `${user.balance.toFixed(2)} ${user.currency || "USD"}` : null;
+  const balanceText = user?.balance != null ? `${user.balance.toFixed(2)} ${user.currency || "EUR"}` : null;
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur-md bg-bg/70 border-b border-white/5">

@@ -11,7 +11,7 @@ export async function GET() {
     .prepare("SELECT nickname, currency FROM profiles WHERE user_id = ?")
     .get(session.id) as { nickname?: string; currency?: string } | undefined;
 
-  const currency = profile?.currency || "USD";
+  const currency = profile?.currency || "EUR";
   const wallet = db
     .prepare("SELECT balance FROM wallets WHERE user_id = ? AND currency = ?")
     .get(session.id, currency) as { balance: number } | undefined;

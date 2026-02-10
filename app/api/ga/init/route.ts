@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       `INSERT INTO ga_sessions (session_id, user_id, created_at) VALUES (?, ?, ?)`
     ).run(sessionId, user.id, Date.now());
 
-    // 2) ensure EUR wallet exists (created_at обязателен, updated_at НЕ используем)
+    // 2) ensure EUR wallet exists
     const currency = gaCurrency(); // must be EUR in test
     const exists = db
       .prepare(`SELECT 1 FROM wallets WHERE user_id = ? AND currency = ? LIMIT 1`)
@@ -44,8 +44,9 @@ export async function POST(req: Request) {
 
     if (!exists) {
       db.prepare(
-        `INSERT INTO wallets (user_id, currency, balance, created_at) VALUES (?, ?, ?, ?)`
-      ).run(user.id, currency, 0, Date.now());
+        `INSERT INTO wallets (id, user_id, currency, balance, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      ).run(uuid(), user.id, currency, 0, Date.now(), Date.now());
     }
 
     const returnUrl = `${baseUrl()}/casino?ga=return`;
@@ -68,6 +69,16 @@ export async function POST(req: Request) {
       player_id: String(user.id),
       player_name: String(playerName).slice(0, 50),
     });
+
+    // 4) Self-validate (staging requirement). Best-effort: do not fail init if staging is flaky.
+    // Provider will call our /api/ga/callback during this step.
+    try {
+      // Lazy import to avoid circular deps in case of edge runtimes
+      const { gaSelfValidate } = await import("@/lib/gaClient");
+      await gaSelfValidate(sessionId);
+    } catch {
+      // ignore
+    }
 
     const url = resp?.url ?? resp?.data?.url ?? resp?.game_url ?? resp?.data?.game_url;
     if (!url) {

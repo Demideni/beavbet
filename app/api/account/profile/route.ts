@@ -25,7 +25,7 @@ export async function PATCH(req: Request) {
     .get(session.id) as { nickname?: string; currency?: string } | undefined;
 
   const nickname = (parsed.data.nickname ?? current?.nickname ?? session.email.split("@")[0]).trim();
-  const currency = parsed.data.currency ?? current?.currency ?? "USD";
+  const currency = parsed.data.currency ?? current?.currency ?? "EUR";
 
   db.prepare("UPDATE profiles SET nickname = ?, currency = ? WHERE user_id = ?").run(
     nickname,

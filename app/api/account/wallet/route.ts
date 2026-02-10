@@ -16,7 +16,7 @@ export async function GET() {
     .prepare("SELECT currency, balance FROM wallets WHERE user_id = ? ORDER BY currency")
     .all(session.id) as Array<{ currency: string; balance: number }>;
 
-  const defaultCurrency = profile?.currency || "USD";
+  const defaultCurrency = profile?.currency || "EUR";
   const main = wallets.find((w) => w.currency === defaultCurrency) || wallets[0] || null;
 
   const tx = db

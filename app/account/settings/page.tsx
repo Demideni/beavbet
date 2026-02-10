@@ -16,7 +16,7 @@ export default function AccountSettingsPage() {
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
   const [nickname, setNickname] = useState("");
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("EUR");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
@@ -27,7 +27,7 @@ export default function AccountSettingsPage() {
       const j = await r.json();
       setMe(j.user);
       setNickname(j.user?.nickname || "");
-      setCurrency(j.user?.currency || "USD");
+      setCurrency(j.user?.currency || "EUR");
       setLoading(false);
     })();
   }, []);

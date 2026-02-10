@@ -144,9 +144,11 @@ async function handleCallback(req: Request) {
     .get(userId, currency) as any;
 
   if (!w) {
+    const now = Date.now();
     db.prepare(
-      `INSERT INTO wallets (user_id, currency, balance, created_at) VALUES (?, ?, ?, ?)`
-    ).run(userId, currency, 0, Date.now());
+      `INSERT INTO wallets (id, user_id, currency, balance, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    ).run(crypto.randomUUID(), userId, currency, 0, now, now);
   }
 
   const wallet = db
@@ -154,6 +156,10 @@ async function handleCallback(req: Request) {
     .get(userId, currency) as any;
 
   const balance = Number(wallet?.balance ?? 0);
+
+  // Common ids some aggregators expect us to echo back
+  const transactionId = params.transaction_id || params.tx_id || params.txid || params.transaction || null;
+  const roundId = params.round_id || params.round || null;
 
   // Decide action
   const actionRaw = (params.action || params.method || params.type || "balance").toLowerCase();
@@ -167,6 +173,10 @@ async function handleCallback(req: Request) {
     return NextResponse.json(
       {
         success: true,
+        status: "ok",
+        session_id: sessionId,
+        transaction_id: transactionId,
+        round_id: roundId,
         currency,
         balance,
       },
@@ -186,7 +196,16 @@ async function handleCallback(req: Request) {
   if (actionRaw.includes("bet") || actionRaw.includes("debit")) {
     if (balance < amount) {
       return NextResponse.json(
-        { success: false, error: "INSUFFICIENT_FUNDS", currency, balance },
+        {
+          success: false,
+          status: "error",
+          session_id: sessionId,
+          transaction_id: transactionId,
+          round_id: roundId,
+          error: "INSUFFICIENT_FUNDS",
+          currency,
+          balance,
+        },
         { status: 200 }
       );
     }
@@ -195,7 +214,15 @@ async function handleCallback(req: Request) {
       .run(newBal, userId, currency);
 
     return NextResponse.json(
-      { success: true, currency, balance: newBal },
+      {
+        success: true,
+        status: "ok",
+        session_id: sessionId,
+        transaction_id: transactionId,
+        round_id: roundId,
+        currency,
+        balance: newBal,
+      },
       { status: 200 }
     );
   }
@@ -207,14 +234,31 @@ async function handleCallback(req: Request) {
       .run(newBal, userId, currency);
 
     return NextResponse.json(
-      { success: true, currency, balance: newBal },
+      {
+        success: true,
+        status: "ok",
+        session_id: sessionId,
+        transaction_id: transactionId,
+        round_id: roundId,
+        currency,
+        balance: newBal,
+      },
       { status: 200 }
     );
   }
 
   // Unknown action: return balance (don’t break provider)
   return NextResponse.json(
-    { success: true, currency, balance, note: "UNKNOWN_ACTION_RETURN_BALANCE" },
+    {
+      success: true,
+      status: "ok",
+      session_id: sessionId,
+      transaction_id: transactionId,
+      round_id: roundId,
+      currency,
+      balance,
+      note: "UNKNOWN_ACTION_RETURN_BALANCE",
+    },
     { status: 200 }
   );
 }

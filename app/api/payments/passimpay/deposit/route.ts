@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 
 const Schema = z.object({
   amount: z.number().finite().positive().max(1000000),
-  currency: z.enum(["USD", "EUR", "USDT", "BTC"]).default("USD"),
+  currency: z.enum(["USD", "EUR", "USDT", "BTC"]).default("EUR"),
 });
 
 export async function POST(req: Request) {

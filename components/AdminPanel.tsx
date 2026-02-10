@@ -81,7 +81,7 @@ function PlayersTab() {
   const [error, setError] = useState<string | null>(null);
 
   const [userId, setUserId] = useState("");
-  const [currency, setCurrency] = useState<"USD" | "EUR" | "USDT" | "BTC">("USD");
+  const [currency, setCurrency] = useState<"USD" | "EUR" | "USDT" | "BTC">("EUR");
   const [amount, setAmount] = useState("100");
   const [reason, setReason] = useState("Manual adjust");
   const [busy, setBusy] = useState(false);

@@ -276,7 +276,7 @@ export default function SportOddsClient() {
       outcomeName,
       odds: opts.odds,
       bookTitle: opts.bookTitle,
-      currency: "USD",
+      currency: "EUR",
     });
   }
 
@@ -291,7 +291,7 @@ export default function SportOddsClient() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          currency: slip.currency || "USD",
+          currency: slip.currency || "EUR",
           stake,
           selection: {
             sportKey: slip.sportKey,

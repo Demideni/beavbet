@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const currency = (body.currency || "USD").toUpperCase();
+  const currency = (body.currency || "EUR").toUpperCase();
   const stake = Number(body.stake);
   const odds = Number(body.selection?.odds);
 
@@ -49,9 +49,11 @@ export async function POST(req: Request) {
   const db = initDb();
 
   // Ensure wallet exists
+  const nowEnsure = Date.now();
   db.prepare(
-    "INSERT OR IGNORE INTO wallets (user_id, currency, balance, updated_at) VALUES (?, ?, 0, ?)"
-  ).run(user.id, currency, Date.now());
+    `INSERT OR IGNORE INTO wallets (id, user_id, currency, balance, created_at, updated_at)
+     VALUES (?, ?, ?, 0, ?, ?)`
+  ).run(uuid(), user.id, currency, nowEnsure, nowEnsure);
 
   const w = db
     .prepare("SELECT balance FROM wallets WHERE user_id = ? AND currency = ?")

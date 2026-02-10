@@ -35,7 +35,7 @@ function ensureSchema(db: any) {
     CREATE TABLE IF NOT EXISTS profiles (
       user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
       nickname TEXT,
-      currency TEXT DEFAULT 'USD',
+      currency TEXT DEFAULT 'EUR',
       created_at INTEGER NOT NULL
     );
 
@@ -152,11 +152,17 @@ function ensureSchema(db: any) {
     // Lightweight migrations for older DBs
   ensureColumn(db, 'users', 'role', "role TEXT NOT NULL DEFAULT 'user'");
 
+  // Wallets: older code paths expect updated_at; keep it optional for backwards compatibility
+  ensureColumn(db, 'wallets', 'updated_at', "updated_at INTEGER");
+
   // Transactions: Passimpay / providers support
   ensureColumn(db, 'transactions', 'provider', "provider TEXT");
   ensureColumn(db, 'transactions', 'provider_ref', "provider_ref TEXT");
   ensureColumn(db, 'transactions', 'order_id', "order_id TEXT");
   ensureColumn(db, 'transactions', 'updated_at', "updated_at INTEGER");
+
+  // Wallets: some routes and providers expect updated_at
+  ensureColumn(db, 'wallets', 'updated_at', "updated_at INTEGER");
 }
 
 declare global {

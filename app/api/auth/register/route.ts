@@ -48,12 +48,12 @@ export async function POST(req: Request) {
   ensureAdminRoleByEmail(email);
   db.prepare(
     "INSERT INTO profiles (user_id, nickname, currency, created_at) VALUES (?, ?, ?, ?)"
-  ).run(id, email.split("@")[0], "USD", now);
+  ).run(id, email.split("@")[0], "EUR", now);
 
   // Create default wallet
   db.prepare(
     "INSERT INTO wallets (id, user_id, currency, balance, created_at) VALUES (?, ?, ?, ?, ?)"
-  ).run(randomUUID(), id, "USD", 0, now);
+  ).run(randomUUID(), id, "EUR", 0, now);
 
   // Attach affiliate referral (either from cookie ?ref=, or promo field)
   const store = await cookies();

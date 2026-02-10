@@ -23,7 +23,7 @@ export default async function AccountPage() {
     .get(session.id) as { nickname?: string; currency?: string } | undefined;
 
   const nickname = profile?.nickname || session.email.split("@")[0];
-  const currency = profile?.currency || "USD";
+  const currency = profile?.currency || "EUR";
 
   const wallet = db
     .prepare("SELECT balance FROM wallets WHERE user_id = ? AND currency = ?")

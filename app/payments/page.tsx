@@ -25,11 +25,11 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [defaultCurrency, setDefaultCurrency] = useState("USD");
+  const [defaultCurrency, setDefaultCurrency] = useState("EUR");
   const [tx, setTx] = useState<Tx[]>([]);
 
   const [amount, setAmount] = useState("50");
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("EUR");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -43,8 +43,8 @@ export default function PaymentsPage() {
       return;
     }
     setWallets(j.wallets || []);
-    setDefaultCurrency(j.defaultCurrency || "USD");
-    setCurrency(j.defaultCurrency || "USD");
+    setDefaultCurrency(j.defaultCurrency || "EUR");
+    setCurrency(j.defaultCurrency || "EUR");
     setTx(j.transactions || []);
     setLoading(false);
   }
