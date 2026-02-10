@@ -18,6 +18,7 @@ export function getGaConfig(): GaConfig {
   const apiUrl =
     envFirst("GA_API_URL", "GAME_API_URL", "GAMEROUTER_API_URL") ??
     "https://staging.gamerouter.pw/api/index.php/v1";
+
   const merchantId = envFirst("GA_MERCHANT_ID", "MERCHANT_ID", "GAMEROUTER_MERCHANT_ID");
   const merchantKey = envFirst("GA_MERCHANT_KEY", "MERCHANT_KEY", "GAMEROUTER_MERCHANT_KEY");
 
@@ -28,10 +29,7 @@ export function getGaConfig(): GaConfig {
 }
 
 export function gaCurrency(): string {
-  return (
-    envFirst("GA_CURRENCY", "GAME_CURRENCY", "CURRENCY") ??
-    "EUR"
-  );
+  return envFirst("GA_CURRENCY", "GAME_CURRENCY", "CURRENCY") ?? "EUR";
 }
 
 function buildQuery(params: Record<string, string | number | boolean | null | undefined>): string {
@@ -98,19 +96,29 @@ async function gaRequest<T>(
   } catch {
     throw new Error(`GA API non-JSON response (${res.status}): ${text.slice(0, 300)}`);
   }
+
   if (!res.ok) {
     throw new Error(`GA API HTTP ${res.status}: ${text.slice(0, 300)}`);
   }
   if (json?.error || json?.success === false) {
     throw new Error(`GA API error: ${text.slice(0, 400)}`);
   }
+
   return json as T;
 }
 
 export async function gaGames() {
   const cfg = getGaConfig();
-  // Some docs use /games (POST). We'll call POST with no params.
-  return gaRequest<any>(cfg, "/games", {}, "POST");
+  // В staging часто GET-only (ты видел 405 "only GET")
+  try {
+    return await gaRequest<any>(cfg, "/games", {}, "GET");
+  } catch (e: any) {
+    const msg = String(e?.message ?? e);
+    if (msg.includes("HTTP 405") || msg.includes("Method Not Allowed")) {
+      return await gaRequest<any>(cfg, "/games", {}, "POST");
+    }
+    throw e;
+  }
 }
 
 export async function gaInit(params: {
@@ -132,7 +140,7 @@ export async function gaInit(params: {
     // provider-required aliases
     player_id: params.player_id ?? params.user_id,
     player_name: params.player_name ?? `player_${params.user_id}`,
-    // keep legacy fields as well (some backends accept either)
+    // keep legacy fields too
     user_id: params.user_id,
     session_id: params.session_id,
     return_url: params.return_url,
@@ -155,5 +163,14 @@ export async function gaInit(params: {
 
 export async function gaSelfValidate(session_id: string) {
   const cfg = getGaConfig();
-  return gaRequest<any>(cfg, "/self-validate", { session_id }, "POST");
+  // Обычно POST, но оставим fallback на GET если staging GET-only
+  try {
+    return await gaRequest<any>(cfg, "/self-validate", { session_id }, "POST");
+  } catch (e: any) {
+    const msg = String(e?.message ?? e);
+    if (msg.includes("HTTP 405") || msg.includes("Method Not Allowed")) {
+      return await gaRequest<any>(cfg, "/self-validate", { session_id }, "GET");
+    }
+    throw e;
+  }
 }
