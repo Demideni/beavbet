@@ -61,14 +61,15 @@ export function PromoTiles() {
         title="Казино"
         desc=""
         href="/casino"
-        art="/tiles/dice.webp"
+        // Use the branded tile artwork on desktop too (mobile already uses it as a background)
+        art="/images/tiles/casino-tile-mobile.png"
         mobileBg="/images/tiles/casino-tile-mobile.png"
       />
       <Tile
         title="Спорт"
         desc=""
         href="/sport"
-        art="/tiles/ball.webp"
+        art="/images/tiles/sport-tile-mobile.png"
         mobileBg="/images/tiles/sport-tile-mobile.png"
       />
     </section>
