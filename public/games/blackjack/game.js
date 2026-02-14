@@ -31,7 +31,7 @@
   const betCancel = el("betCancel");
   const betCloseBtn = el("betCloseBtn"); // ✕
   const pickDeltaEl = el("pickDelta");   // if present
-  const carList = el("carList");
+  const carList = el("carList") || (betModal ? betModal.querySelector(".chips") : null);
   const carLeft = el("carLeft");
   const carRight = el("carRight");
 
@@ -354,6 +354,7 @@
 
     pendingDelta = 0;
     if (pickDeltaEl) pickDeltaEl.textContent = "+0";
+    if (betApply) betApply.disabled = true;
 
     if (carList) {
       carList.querySelectorAll(".chip").forEach(b => b.classList.remove("active"));
@@ -371,6 +372,7 @@
     if (!betModal) return;
     betModal.hidden = true;
     pendingDelta = 0;
+    if (betApply) betApply.disabled = false;
 
     // возвращаем доступность Deal (если не в раунде)
     if (!inRound) dealBtn.disabled = false;
@@ -379,6 +381,7 @@
   function setPendingDelta(v) {
     pendingDelta = v;
     if (pickDeltaEl) pickDeltaEl.textContent = (pendingDelta >= 0 ? `+${pendingDelta}` : `${pendingDelta}`);
+    if (betApply) betApply.disabled = (pendingDelta === 0);
   }
 
   function applyDelta() {
@@ -418,6 +421,18 @@
     e.preventDefault();
     e.stopPropagation();
     applyDelta();
+  });
+
+  // Закрытие по клику вне окна (по оверлею)
+  if (betModal) {
+    betModal.addEventListener("pointerdown", (e) => {
+      if (e.target === betModal) closeBetModal();
+    });
+  }
+
+  // Закрытие по ESC
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && betModal && betModal.hidden === false) closeBetModal();
   });
 
   // Выбор дельты
