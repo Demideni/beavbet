@@ -384,11 +384,23 @@
   if (betAdjustBtn) betAdjustBtn.addEventListener("click", openBetModal);
 
 if (betModal) {
-  betModal.addEventListener("click", (e) => {
-    const sheet = betModal.querySelector(".modalSheet");
-    // если тап НЕ внутри модалки — закрываем
-    if (sheet && !sheet.contains(e.target)) closeBetModal();
-  });
+  const sheet = betModal.querySelector(".modalSheet");
+
+  // Закрытие по тапу/клику вне модалки (по затемнению)
+  const maybeClose = (e) => {
+    if (!sheet) { closeBetModal(); return; }
+    if (!sheet.contains(e.target)) closeBetModal();
+  };
+
+  // pointerdown на iOS срабатывает стабильнее, чем click
+  betModal.addEventListener("pointerdown", maybeClose, { passive: true });
+  betModal.addEventListener("click", maybeClose);
+
+  // не даём кликам внутри sheet всплывать на overlay
+  if (sheet) {
+    sheet.addEventListener("pointerdown", (e) => e.stopPropagation(), { passive: true });
+    sheet.addEventListener("click", (e) => e.stopPropagation());
+  }
 }
 
 document.addEventListener("keydown", (e) => {

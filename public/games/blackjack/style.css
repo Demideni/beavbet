@@ -322,7 +322,12 @@ h2{margin:0; font-size:16px; color:#fff}
   background: rgba(10,10,10,0.92);
   backdrop-filter: blur(12px);
   padding: 14px;
+
+  /* Важно: не даём sheet занять весь экран, чтобы можно было тапнуть по затемнению и закрыть */
+  max-height: 72vh;
+  overflow: auto;
 }
+
 .modalHead{
   padding: 4px 6px 10px;
 }
