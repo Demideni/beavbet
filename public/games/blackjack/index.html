@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BeavBet Blackjack</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="brand">
+        <div class="logo">BeavBet</div>
+        <div class="sub">Blackjack</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="label">Баланс</div>
+          <div class="value" id="balance">$1000</div>
+        </div>
+        <div class="stat">
+          <div class="label">Ставка</div>
+          <div class="value" id="bet">$10</div>
+        </div>
+      </div>
+    </header>
+
+    <main class="table">
+      <section class="hand dealer">
+        <div class="row">
+          <h2>Дилер</h2>
+          <div class="score" id="dealerScore">—</div>
+        </div>
+        <div class="cards" id="dealerCards"></div>
+      </section>
+
+      <div class="divider"></div>
+
+      <section class="hand player">
+        <div class="row">
+          <h2>Игрок</h2>
+          <div class="score" id="playerScore">—</div>
+        </div>
+        <div class="cards" id="playerCards"></div>
+      </section>
+
+      <section class="panel">
+        <div class="message" id="message">Выберите ставку и нажмите Deal.</div>
+
+        <div class="betbar">
+          <button class="btn ghost" id="betMinus">−</button>
+          <div class="chipline">
+            <button class="chip" data-chip="5">+5</button>
+            <button class="chip" data-chip="10">+10</button>
+            <button class="chip" data-chip="25">+25</button>
+            <button class="chip" data-chip="50">+50</button>
+            <button class="chip" data-chip="100">+100</button>
+          </div>
+          <button class="btn ghost" id="betPlus">+</button>
+        </div>
+
+        <div class="controls">
+          <button class="btn primary" id="dealBtn">Deal</button>
+          <button class="btn" id="hitBtn" disabled>Hit</button>
+          <button class="btn" id="standBtn" disabled>Stand</button>
+          <button class="btn" id="doubleBtn" disabled>Double</button>
+          <button class="btn danger" id="newBtn">New Game</button>
+        </div>
+
+        <div class="rules">
+          <div>Правила: 6 колод, дилер стоит на soft 17, Blackjack pays 3:2, Double только на первых двух.</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="./game.js"></script>
+</body>
+</html>
