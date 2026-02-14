@@ -11,8 +11,7 @@
   --safeBottom: env(safe-area-inset-bottom);
   --tapH: 84px;
   --tapbarH: 84px;
-  --statusH: 56px;
-  --bottomGutter: calc(var(--tapbarH) + var(--statusH));
+      --bottomGutter: var(--tapbarH);
 }
 
 *{box-sizing:border-box}
@@ -31,7 +30,7 @@ body{
   margin: 0 auto;
   padding: 18px;
   padding-top: calc(14px + var(--safeTop));
-  padding-bottom: calc(18px + var(--bottomGutter, 0px) + var(--safeBottom));
+  padding-bottom: calc(18px + var(--tapbarH, var(--tapH)) + var(--safeBottom));
 }
 
 .top{
@@ -78,7 +77,7 @@ body{
   border-radius:16px;
   position: relative;
   overflow: hidden;
-  padding-bottom: calc(16px + var(--bottomGutter, 0px) + var(--safeBottom));
+  padding-bottom: calc(16px + var(--tapbarH, var(--tapH)) + var(--safeBottom));
   background: linear-gradient(180deg, #0f0f0f, #0b0b0b);
 }
 
@@ -183,30 +182,37 @@ h2{margin:0; font-size:16px; color:#fff}
 }
 
 .statusBar{
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(980px, calc(100% - 24px));
-  bottom: calc(var(--tapbarH, var(--tapH)) + var(--safeBottom));
-  padding: 10px 14px;
-  background: linear-gradient(180deg, rgba(10,10,10,0.10), rgba(10,10,10,0.55));
+  /* Evolution-like round message strip above actions */
+  position: sticky;
+  bottom: calc(var(--tapbarH, var(--tapH)) + var(--safeBottom) + 12px);
+  margin-top: 14px;
+  margin-bottom: 10px;
+  padding: 14px 16px;
+  background: rgba(0,0,0,0.55);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.10);
-  border-bottom: 0;
-  border-radius: 16px 16px 0 0;
-  z-index: 45;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 16px;
+  z-index: 40;
 }
 
+.statusBar .message{
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: 0.2px;
+  color: #fff;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.35);
+}
+
+/* mobile: make it full width inside table, no awkward centering */
 @media (max-width: 640px){
   .statusBar{
-    left: 0;
-    right: 0;
-    transform: none;
-    width: 100%;
-    border-radius: 0;
-    border-left: 0;
-    border-right: 0;
+    border-radius: 14px;
+    padding: 12px 14px;
+    bottom: calc(var(--tapbarH, var(--tapH)) + var(--safeBottom) + 10px);
   }
+  .statusBar .message{ font-size: 16px; }
+}
 }
 
 
@@ -257,17 +263,17 @@ h2{margin:0; font-size:16px; color:#fff}
   transform: translateX(-50%);
   width: min(980px, calc(100% - 24px));
   bottom: 0;
-  padding: 6px 12px calc(6px + var(--safeBottom));
+  padding: 4px 12px calc(10px + var(--safeBottom));
   background: linear-gradient(180deg, rgba(10,10,10,0.10), rgba(10,10,10,0.92));
   backdrop-filter: blur(10px);
   border-top: 1px solid rgba(255,255,255,0.10);
   border-radius: 16px 16px 0 0;
   display:flex;
-  align-items:flex-end;
+  align-items:center;
   justify-content:space-between;
   gap: 12px;
   height: auto;
-  min-height: calc(var(--tapH) + var(--safeBottom));
+  min-height: calc(72px + var(--safeBottom));
   z-index: 50;
 }
 
@@ -352,7 +358,7 @@ h2{margin:0; font-size:16px; color:#fff}
   inset: 0;
   background: rgba(0,0,0,0.55);
   display:flex;
-  align-items:flex-end;
+  align-items:center;
   justify-content:center;
   z-index: 80;
   padding: 14px 14px calc(14px + var(--safeBottom));

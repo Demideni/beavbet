@@ -21,14 +21,10 @@
 
   // Layout sync: reserve space for fixed status + tapbar on all screens
   const tapbarEl = el("tapbar") || document.querySelector(".tapbar");
-  const statusBarEl = el("statusBar");
   function syncLayoutVars(){
     const tb = tapbarEl ? tapbarEl.getBoundingClientRect().height : 0;
-    const sb = statusBarEl ? statusBarEl.getBoundingClientRect().height : 0;
     const root = document.documentElement;
     root.style.setProperty("--tapbarH", `${Math.ceil(tb)}px`);
-    root.style.setProperty("--statusH", `${Math.ceil(sb)}px`);
-    root.style.setProperty("--bottomGutter", `${Math.ceil(tb + sb)}px`);
   }
   window.addEventListener("resize", syncLayoutVars, { passive: true });
   window.addEventListener("orientationchange", syncLayoutVars, { passive: true });
