@@ -386,21 +386,23 @@
 if (betModal) {
   const sheet = betModal.querySelector(".modalSheet");
 
-  // Закрытие по тапу/клику вне модалки (по затемнению)
-  const maybeClose = (e) => {
-    if (!sheet) { closeBetModal(); return; }
-    if (!sheet.contains(e.target)) closeBetModal();
+  // Внутри sheet — НЕ закрываем
+  if (sheet) {
+    sheet.addEventListener("pointerdown", (e) => e.stopPropagation());
+    sheet.addEventListener("click", (e) => e.stopPropagation());
+    sheet.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: true });
+  }
+
+  // Тап/клик по затемнению (вне sheet) — закрываем
+  const tryClose = (e) => {
+    const target = e.target;
+    if (!sheet) return closeBetModal();
+    if (!sheet.contains(target)) closeBetModal();
   };
 
-  // pointerdown на iOS срабатывает стабильнее, чем click
-  betModal.addEventListener("pointerdown", maybeClose, { passive: true });
-  betModal.addEventListener("click", maybeClose);
-
-  // не даём кликам внутри sheet всплывать на overlay
-  if (sheet) {
-    sheet.addEventListener("pointerdown", (e) => e.stopPropagation(), { passive: true });
-    sheet.addEventListener("click", (e) => e.stopPropagation());
-  }
+  betModal.addEventListener("pointerdown", tryClose);
+  betModal.addEventListener("click", tryClose);
+  betModal.addEventListener("touchstart", tryClose, { passive: true });
 }
 
 document.addEventListener("keydown", (e) => {
