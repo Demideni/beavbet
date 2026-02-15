@@ -18,7 +18,7 @@ function Tile({
   return (
     <Link
       href={href}
-      className="group relative overflow-hidden rounded-3xl card-glass p-5 lg:p-7 min-h-[150px] hover:translate-y-[-1px] transition"
+      className="group relative overflow-hidden rounded-3xl card-glass p-5 lg:p-7 min-h-[150px] hover:translate-y-[-1px] transition min-w-[260px] md:min-w-0 snap-start"
     >
       {/* Mobile-only banner background */}
       {mobileBg ? (
@@ -56,7 +56,12 @@ function Tile({
 
 export function PromoTiles() {
   return (
-    <section className="grid grid-cols-2 lg:grid-cols-2 gap-4 lg:gap-5">
+    <section
+      className={
+        "flex gap-4 lg:gap-5 overflow-x-auto md:overflow-visible pb-2 md:pb-0 snap-x snap-mandatory " +
+        "md:grid md:grid-cols-2 lg:grid-cols-2"
+      }
+    >
       <Tile
         title="Казино"
         desc=""
@@ -64,6 +69,13 @@ export function PromoTiles() {
         // Use the branded tile artwork on desktop too (mobile already uses it as a background)
         art="/images/tiles/casino-tile-mobile.png"
         mobileBg="/images/tiles/casino-tile-mobile.png"
+      />
+      <Tile
+        title="Arena"
+        desc=""
+        href="/arena"
+        art="/images/tiles/arena-tile-mobile.png"
+        mobileBg="/images/tiles/arena-tile-mobile.png"
       />
       <Tile
         title="Спорт"
