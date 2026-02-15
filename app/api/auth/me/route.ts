@@ -13,8 +13,8 @@ export async function GET() {
 
   const currency = profile?.currency || "EUR";
   const wallet = db
-    .prepare("SELECT balance FROM wallets WHERE user_id = ? AND currency = ?")
-    .get(session.id, currency) as { balance: number } | undefined;
+    .prepare("SELECT balance, locked_balance FROM wallets WHERE user_id = ? AND currency = ?")
+    .get(session.id, currency) as { balance: number; locked_balance?: number } | undefined;
 
   return NextResponse.json({
     ok: true,
@@ -24,6 +24,8 @@ export async function GET() {
       nickname: profile?.nickname || null,
       currency,
       balance: wallet?.balance || 0,
+      lockedBalance: wallet?.locked_balance || 0,
+      totalBalance: Number(((wallet?.balance || 0) + (wallet?.locked_balance || 0)).toFixed(2)),
     },
   });
 }

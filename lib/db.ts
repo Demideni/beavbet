@@ -61,6 +61,7 @@ function ensureSchema(db: any) {
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       currency TEXT NOT NULL,
       balance REAL NOT NULL DEFAULT 0,
+      locked_balance REAL NOT NULL DEFAULT 0,
       created_at INTEGER NOT NULL,
       UNIQUE(user_id, currency)
     );
@@ -171,6 +172,75 @@ function ensureSchema(db: any) {
 
   // Wallets: older code paths expect updated_at; keep it optional for backwards compatibility
   ensureColumn(db, "wallets", "updated_at", "updated_at INTEGER");
+  // Arena needs lockable funds (available balance stays in wallets.balance)
+  ensureColumn(db, "wallets", "locked_balance", "locked_balance REAL NOT NULL DEFAULT 0");
+
+  // Unified wallet ledger (Arena uses it heavily; other products can adopt later)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS wallet_transactions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      type TEXT NOT NULL, -- deposit | withdraw | bet | win | lock | unlock | prize | fee
+      amount REAL NOT NULL,
+      currency TEXT NOT NULL,
+      product TEXT NOT NULL, -- casino | sportsbook | arena
+      ref_id TEXT,
+      meta TEXT,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_wallet_tx_user_created ON wallet_transactions(user_id, created_at DESC);
+  `);
+
+  // BeavBet Arena (competition / tournament module)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS arena_tournaments (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      game TEXT NOT NULL,
+      team_size INTEGER NOT NULL DEFAULT 1,
+      entry_fee REAL NOT NULL,
+      currency TEXT NOT NULL DEFAULT 'EUR',
+      max_players INTEGER NOT NULL,
+      rake REAL NOT NULL DEFAULT 0.10, -- 10%
+      status TEXT NOT NULL DEFAULT 'open', -- open | live | finished
+      starts_at INTEGER,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS arena_participants (
+      id TEXT PRIMARY KEY,
+      tournament_id TEXT NOT NULL REFERENCES arena_tournaments(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      status TEXT NOT NULL DEFAULT 'joined', -- joined | eliminated | winner
+      created_at INTEGER NOT NULL,
+      UNIQUE(tournament_id, user_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_arena_participants_tournament ON arena_participants(tournament_id);
+
+    CREATE TABLE IF NOT EXISTS arena_matches (
+      id TEXT PRIMARY KEY,
+      tournament_id TEXT NOT NULL REFERENCES arena_tournaments(id) ON DELETE CASCADE,
+      round INTEGER NOT NULL,
+      p1_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      p2_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      winner_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+      status TEXT NOT NULL DEFAULT 'open', -- open | reported | pending_review | done
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_arena_matches_tournament_round ON arena_matches(tournament_id, round);
+
+    CREATE TABLE IF NOT EXISTS arena_match_reports (
+      id TEXT PRIMARY KEY,
+      match_id TEXT NOT NULL REFERENCES arena_matches(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      result TEXT NOT NULL, -- win | lose
+      created_at INTEGER NOT NULL,
+      UNIQUE(match_id, user_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_arena_reports_match ON arena_match_reports(match_id);
+  `);
 
   // Transactions: Passimpay / providers support
   ensureColumn(db, "transactions", "provider", "provider TEXT");
